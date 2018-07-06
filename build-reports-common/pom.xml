@@ -16,7 +16,17 @@
             <groupId>net.zcarioca.build</groupId>
             <artifactId>build-utils-common</artifactId>
         </dependency>
-        
+
+        <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-all</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-beanutils</groupId>
+            <artifactId>commons-beanutils</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.apache.maven.reporting</groupId>
             <artifactId>maven-reporting-api</artifactId>
@@ -37,6 +47,12 @@
         <dependency>
             <groupId>org.apache.maven.doxia</groupId>
             <artifactId>doxia-site-renderer</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

@@ -35,6 +35,7 @@
         <oshiVersion>3.5.0</oshiVersion>
         <jacksonVersion>2.9.5</jacksonVersion>
         <doxiaVersion>1.8</doxiaVersion>
+        <groovyVersion>2.4.8</groovyVersion>
         <junitVersion>4.12</junitVersion>
 
         <!-- Plugins -->
@@ -128,6 +129,13 @@
                         <artifactId>aether-spi</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <!-- GROOVY dependencies -->
+            <dependency>
+                <groupId>org.codehaus.groovy</groupId>
+                <artifactId>groovy-all</artifactId>
+                <version>${groovyVersion}</version>
             </dependency>
 
             <!-- DOXIA dependencies -->

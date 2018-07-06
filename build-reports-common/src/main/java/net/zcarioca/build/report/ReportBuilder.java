@@ -1,22 +1,29 @@
 package net.zcarioca.build.report;
 
 import org.apache.commons.io.output.FileWriterWithEncoding;
-import org.apache.maven.doxia.sink.Sink;
 import org.apache.maven.doxia.site.decoration.DecorationModel;
-import org.apache.maven.doxia.siterenderer.*;
+import org.apache.maven.doxia.siterenderer.DefaultSiteRenderer;
+import org.apache.maven.doxia.siterenderer.Renderer;
+import org.apache.maven.doxia.siterenderer.RendererException;
+import org.apache.maven.doxia.siterenderer.RenderingContext;
+import org.apache.maven.doxia.siterenderer.SiteRenderingContext;
 import org.apache.maven.doxia.siterenderer.sink.SiteRendererSink;
+import org.codehaus.plexus.logging.console.ConsoleLogger;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.*;
-import java.util.function.BiFunction;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.ResourceBundle;
 
 import static net.zcarioca.build.common.Validators.requireNotBlank;
 import static net.zcarioca.build.common.Validators.requireNotNull;
 
-public class ReportBuilder<R extends AbstractSystemReportRenderer> {
+public class ReportBuilder {
     private static final String DOXIA_TEMPLATE = "org/apache/maven/doxia/siterenderer/resources/default-site.vm";
 
     ResourceBundle resourcBundle;
@@ -25,7 +32,12 @@ public class ReportBuilder<R extends AbstractSystemReportRenderer> {
     boolean includeToc;
     String generatorName;
     Map<String, Object> templateProperties;
-    Renderer renderer = new DefaultSiteRenderer();
+    Renderer renderer;
+
+    public ReportBuilder() {
+        renderer = new DefaultSiteRenderer();
+        ((DefaultSiteRenderer) renderer).enableLogging(new ConsoleLogger());
+    }
 
     public ReportBuilder renderer(final Renderer renderer) {
         requireNotNull(renderer, "Parameter 'renderer' is null");
@@ -82,7 +94,7 @@ public class ReportBuilder<R extends AbstractSystemReportRenderer> {
         return this;
     }
 
-    public void writeReport(final File outputFile, final BiFunction<Sink, ReportBuilder, R> rendererSupplier) throws IOException {
+    public void writeReport(final File outputFile, final ReportRendererFactory rendererFactory) throws IOException {
         final File parent = outputFile.getParentFile();
         if (!parent.exists()) {
             if (!parent.mkdirs()) {
@@ -104,11 +116,14 @@ public class ReportBuilder<R extends AbstractSystemReportRenderer> {
         final SiteRendererSink siteRendererSink = new CustomSiteSink(renderingContext);
 
         // auto-closeable is only used to close the sink
-        try (final AutoCloseable ignored = () -> siteRendererSink.close()) {
-            rendererSupplier.apply(siteRendererSink, this).render();
-        } catch (final Exception e) {
-            throw new IOException("Unable to close rendering context");
-        }
+        rendererFactory.apply(siteRendererSink, this).render();
+        siteRendererSink.close();
+
+        System.out.println("Title: " + siteRendererSink.getTitle());
+        System.out.println("Authors: " + siteRendererSink.getAuthors());
+        System.out.println("Head: " + siteRendererSink.getHead());
+        System.out.println("Body: " + siteRendererSink.getBody());
+
 
         try (final BufferedWriter writer = new BufferedWriter(new FileWriterWithEncoding(outputFile, encoding))) {
             renderer.mergeDocumentIntoSite(writer, siteRendererSink, siteRenderingContext);

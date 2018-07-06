@@ -2,9 +2,9 @@ package net.zcarioca.build.maven;
 
 import net.zcarioca.build.report.AbstractSystemReportRenderer;
 import net.zcarioca.build.report.ReportBuilder;
+import net.zcarioca.build.report.ReportRendererFactory;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.maven.doxia.sink.Sink;
 import org.apache.maven.doxia.siterenderer.Renderer;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -19,7 +19,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
-import java.util.function.BiFunction;
 
 public abstract class AbstractMavenReportMojo<R extends AbstractSystemReportRenderer> extends AbstractMavenMojo {
 
@@ -43,17 +42,13 @@ public abstract class AbstractMavenReportMojo<R extends AbstractSystemReportRend
 
     @Override
     protected void executeMojo() throws MojoExecutionException, MojoFailureException {
-        final BiFunction<Sink, ReportBuilder<R>, R> rendererSupplier = executeReportMojo();
-        generateFinalReport(rendererSupplier, getOutputFileName());
+        generateFinalReport(executeReportMojo(), getOutputFileName());
     }
 
-    protected abstract BiFunction<Sink, ReportBuilder<R>, R> executeReportMojo() throws MojoExecutionException, MojoFailureException;
-
-
-    protected void generateFinalReport(final BiFunction<Sink, ReportBuilder<R>, R> rendererSupplier,
+    protected void generateFinalReport(final ReportRendererFactory rendererFactory,
                                        final String outputFileName) throws MojoExecutionException {
         try {
-            new ReportBuilder<>()
+            new ReportBuilder()
                     .resourceBundle(getBundle())
                     .locale(userLanguage, userCountry)
                     .encoding(getOutputEncoding())
@@ -61,11 +56,13 @@ public abstract class AbstractMavenReportMojo<R extends AbstractSystemReportRend
                     .includeToc(true)
                     .renderer(renderer)
                     .templateProperties(getTemplateProperties())
-                    .writeReport(new File(outputDirectory, outputFileName), rendererSupplier);
+                    .writeReport(new File(outputDirectory, outputFileName), rendererFactory);
         } catch (final IOException e) {
             throw new MojoExecutionException(e.getMessage(), e);
         }
     }
+
+    protected abstract ReportRendererFactory executeReportMojo() throws MojoExecutionException, MojoFailureException;
 
     protected abstract String getOutputFileName();
 
@@ -85,7 +82,7 @@ public abstract class AbstractMavenReportMojo<R extends AbstractSystemReportRend
         }
     }
 
-    private Map<String, ?> getTemplateProperties() {
+    private Map<String, Object> getTemplateProperties() {
         final Map<String, Object> templateProperties = new HashMap<>();
         templateProperties.put("project", project);
         templateProperties.put("inputEncoding", getInputEncoding());
